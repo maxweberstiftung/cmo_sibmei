@@ -1,0 +1,27 @@
+{
+  "name": "cmo_sibmei",
+  "version": "0.0.1",
+  "description": "Exports custom CMO styles from Sibelius to MEI",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maxweberstiftung/cmo_sibmei.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maxweberstiftung/cmo_sibmei/issues"
+  },
+  "homepage": "https://github.com/maxweberstiftung/cmo_sibmei#readme",
+  "devDependencies": {
+    "ansi-colors": "^2.0.5",
+    "fancy-log": "^1.3.2",
+    "gulp": "^4.0.2",
+    "q": "^1.5.1"
+  }
+}
