@@ -1,5 +1,6 @@
 {
     PLGTITLE "CMO bracket input helper"
+    PLGNAME "cmoBracketInputHelper"
 
     UsulChoices
     UsulChoice
@@ -163,6 +164,11 @@
     }"
 
 
+    SortByDx "(noteRest1, noteRest2) {
+        return noteRest2.Dx > noteRest1.Dx;
+    }"
+
+
     /param "score (Score)"
     /param "barNumber (int)"
     /return "(SparseArray<SparseArray<NoteRest>>|Error)  Keys of SparseArray are
@@ -171,12 +177,16 @@
     All NoteRests have a user property named `precedingPosition` set."
     CollectNoteRestsByPosition "(score, barNumber) {
         noteRestsByPosition = CreateSparseArray();
+        precedingNoteRest = null;
 
         for staffNum = 1 to score.StaffCount + 1 {
             bar = score.NthStaff(staffNum).NthBar(barNumber);
             for each NoteRest noteRest in bar {
                 if (noteRest.VoiceNumber != 1) {
                     return error('Unexpected voice ' & noteRest.VoiceNumber & ' on staff ' & staffNumber, bar, -1);
+                }
+                if (noteRest.GraceNote and noteRest.Dx > 0) {
+                    return error('Can not handle grace note that are shifted to the right, on staff ' & staffNumber, bar, -1);
                 }
                 noteRestsAtPosition = noteRestsByPosition[noteRest.Position];
                 // Create entry if it's not already present
@@ -190,121 +200,82 @@
 
         precedingPosition = -1;
         for each position in noteRestsByPosition.ValidIndices {
-            for each noteRest in noteRestsByPosition[position] {
+            noteRestsAtPosition = noteRestsByPosition[position];
+            utils.SortArrayCustom(noteRestsAtPosition, false, Self, 'SortByDx', PLGNAME);
+            for each noteRest in noteRestsAtPosition {
                 noteRest._property:precedingPosition = precedingPosition;
             }
-            if (position > precedingPosition) {
-                precedingPosition = position;
-            }
+            precedingPosition = position;
         }
 
         return noteRestsByPosition;
     }"
 
 
-    /return "(SparseArray<SparseArray<NoteRest>>)|Error  A SparseArray with all
-    the NoteRests from all bars at `barNumber`.  Keys are the Position values,
-    values are SparseArrays of NoteRests at that position (first all NoteRest at
-    that position from staff 1, then staff 2 and so on).
-
-    Each entry also has a field `noteRestsAtPrecedingPosition`, pointing to the
-    entry at the preceding position."
-    DeterminePositions "(score, barNumber, groupStarts) {
+    /return "(SparseArray<NoteRest>|Error)  A SparseArray with anchor NoteRests
+    for all the group starts and ends.  Entries at even indices are anchors for
+    start brackets, those at odd indices for end brackets."
+    CollectAnchorNoteRests "(score, barNumber, groupStarts) {
         noteRestsByPosition = CollectNoteRestsByPosition(score, barNumber);
         if (noteRestsByPosition._property:error) {
             return noteRestsByPosition._property:error;
         }
 
-        positions = CreateSparseArray();
-        offsets = CreateSparseArray();
+        anchors = CreateSparseArray();
         precedingNoteRest = null;
 
         i = 0;
-        for each noteRestsAtPosition in noteRestsByPosition {
-            noteRest = noteRestsAtPosition[0];
-            switch (true) {
-                case (groupStarts[i] = noteRest.Position) {
-                    positions.Push(noteRest.Position);
-                    offsets.Push(noteRest.Dx + StartSymbolDx);
+        for each position in noteRestsByPosition.ValidIndices {
+            noteRestsAtPosition = noteRestsByPosition[position];
+            firstNoteRest = noteRestsAtPosition[0];
+            lastNoteRest = noteRestsAtPosition[noteRestsAtPosition.Length - 1];
+
+            if (position > groupStarts[i]) {
+                return error('Did not find expected anchor note at the start of group', firstNoteRest.ParentBar, i);
+            }
+
+            if (position = groupStarts[i]) {
+                if (null != precedingNoteRest) {
+                    anchors.Push(precedingNoteRest);
+                }
+                anchors.Push(firstNoteRest);
+                i = i + 1;
+                if (i = groupStarts.Length) {
+                    // We've reached the last group
+                    noteRestsAtLastPosition = noteRestsByPosition[noteRestsByPosition.Length - 1];
+                    anchors.Push(noteRestsAtLastPosition[noteRestsAtLastPosition.Length - 1]);
+                    if (anchors.Length != (2 * groupStarts.Length)) {
+                        return error('Did not find all expected anchor notes', firstNoteRest.ParentBar, -1);
+                    }
+                    return anchors;
                 }
             }
-            if (noteRest.Position) {
-                ;
-            }
-            precedingNoteRest = noteRest;
+
+            precedingNoteRest = lastNoteRest;
         }
 
-
-
-        for groupIndex = 0 to groupStarts.Length {
-            groupStartPosition = groupStartPosition[groupIndex];
-            if (groupStartPosition > 0) {
-                ;
-            }
-            noteRestsAtPosition = noteRestsByPosition[groupStartPosition];
-            if (null = noteRestsAtPosition) {
-                return error('Missing start note for group', bar, groupIndex);
-            }
-
-        }
-
-
-        return noteRestsByPosition;
+        return error();
     }"
 
 
-    DetermineBracketPositions "(noteRestsByPosition, groupStarts) {
-        bracketPositions = CreateSparseArray();
-
-        noteRestsAtGroupStart = '';
-
-        for each groupStart in groupStarts {
-            if (groupStart > 0) {
-                if ('' = noteRestsAtGroupStart or '' = noteRestsAtGroupStart.noteRestsAtPrecedingPosition) {
-                    return error('Group processing error', barNumber, -1);
-                }
-                bracketPositions.Push();
-            }
-            noteRestsAtGroupStart = noteRestsByPosition[groupStart];
-            if ('' = noteRestsAtGroupStart or noteRestsAtGroupStart[0].ParentBar.ParentStaff.StaffNum != 1) {
-                bracketPositions.error = 'Need a note/rest on staff 1 to anchor start bracket to in bar ' & barNumber;
-                return bracketPositions;
-            }
-        }
-
-        return noteRestsByPosition;
-    }"
-
-
-    PositionSymbol "(symbol, start) {
+    PositionSymbol "(symbol) {
         symbol.Dy = SymbolDy;
-        if (start) {
-            symbol.Dx = StartSymbolDx;
-        } else {
-            symbol.Dx = EndSymbolDx;
+        switch (symbol.Index) {
+            case (StartSymbol) {
+                symbol.Dx = StartSymbolDx;
+            }
+            case (EndSymbol) {
+                symbol.Dx = EndSymbolDx;
+            }
+            default {
+                return 'No positioning information available for symbol ' & symbolIndex;
+            }
         }
-    }"
-
-
-    GroupInfo "(bar, groupIndex) {
-        return ' group ' & (groupIndex + 1) & ' in bar ' & bar.BarNumber;
     }"
 
 
     /return "(string)  An empty string on success, otherwise an error message."
     ReanchorBrackets "(bar, existingBrackets, groupStarts) {
-        ;
-    }"
-
-
-    /param "bar (Bar)"
-    /param "groupStarts (SparseArray<int>)  Positions of bracket starts"
-    /return "(SparseArray<int>)  Positions of the end events that group end
-    brackets is to be anchored to.  If staff 1 only has the start event, then
-    staff 2 will be searched for an end event.  If both only have the start
-    event, then the closing bracket will be anchored at half the duration of the
-    start event."
-    CollectGroupEnds "(bar, groupStarts) {
         ;
     }"
 
@@ -336,11 +307,45 @@
                 return 'Bar ' & bar.BarNumber & ' has deviating pre-existing bracket positions';
             }
 
+            // TODO: Don't touch brackets if they're already O.K.
             for each bracket in existingBrackets {
                 bracket.Delete();
             }
 
+            score = bar.ParentStaff.ParentScore;
+            anchoredNoteRests = CollectAnchorNoteRests(score, bar.BarNumber, groups);
+            for i = 0 to anchoredNoteRests.Length step 2 {
+                startNoteRest = anchoredNoteRests[i];
+                startSymbol = bar.AddSymbol(startNoteRest.Position, StartSymbol);
+                error = PositionSymbol(startSymbol);
+                if (error) {
+                    return error;
+                }
 
+                endNoteRest = anchoredNoteRests[i + 1];
+                switch (true) {
+                    case (endNoteRest.Position > startNoteRest.Position) {
+                        // The end bracket can be anchored directly on the note
+                        endPosition = endNoteRest.Position;
+                    }
+                    case (anchoredNoteRests.Length > i + 2) {
+                        // The end bracket is anchored halfway between the group
+                        // start note and the next group start note
+                        endPosition = anchoredNoteRests[i + 2].Position;
+                    }
+                    default {
+                        // The end bracket is anchored halfway between the groups
+                        // start note and the end of the bar
+                        endPosition = bar.Length;
+                    }
+                }
+                endPosition = (endPosition + endNoteRest.Position) / 2;
+                endSymbol = bar.AddSymbol(endPosition, EndSymbol);
+                error = PositionSymbol(endSymbol);
+                if (error) {
+                    return error;
+                }
+            }
         }
     }"
 
