@@ -1,0 +1,404 @@
+{
+    PLGTITLE "CMO bracket input helper"
+
+    UsulChoices
+    UsulChoice
+    DlgUsulNama
+    DlgUsulGroups
+
+
+    Initialize "() {
+        AddToPluginsMenu(PLGTITLE, 'Run');
+    }"
+
+
+    InitGlobals "() {
+        Self._property:SymbolDy = 96;
+        Self._property:StartSymbolDx = -4;
+        Self._property:EndSymbolDx = -4;
+        Self._property:StartSymbol = 404;
+        Self._property:EndSymbol = 405;
+        // AlignmentGridSize must be float, i.e. '.0' is important
+        Self._property:AlignmentGridSize = 128.0;
+    }"
+
+
+    Run "() {
+        InitGlobals();
+        if (not Sibelius.ShowDialog(Self, Dialog)) {
+            return '';
+        }
+        score = Sibelius.ActiveScore;
+        if (SelectionIsEmpty(score.Selection)) {
+            selection = score;
+        } else {
+            selection = score.Selection;
+        }
+        groups = GetUsuls()[UsulChoice];
+        error = CreateBrackets(selection, groups);
+        if (error) {
+            Sibelius.MessageBox(error & '\n\nProcessing was interrupted.');
+        }
+    }"
+
+
+    GetUsulFile "() {
+        return cmo_sibmei.GetPluginDir(PLGTITLE) & 'usuls.csv';
+    }"
+
+
+    /return "(Dictionary)  Keys are usul names, values are `SparseArray`s with
+    the lengths of each group in quarter notes."
+    GetUsuls "() {
+        if (null != Self._property:Usuls) {
+            return Usuls;
+        }
+        Self._property:Usuls = CreateDictionary();
+        usulLines = Sibelius.ReadTextFile(GetUsulFile());
+        for each line in usulLines {
+            // First column is the usul name, the following columns are the
+            // group lengths
+            fields = SplitString(line, ',');
+            usulName = fields[0];
+            groupLengths = CreateSparseArray();
+            for i = 1 to fields.Length {
+                groupLengths.Push(fields[i] + 0);
+            }
+            Usuls[usulName] = groupLengths;
+        }
+        return Usuls;
+    }"
+
+
+    ///"Adds (or overwrites) an usul int the global `Usuls` Dictionary and writes
+    the updated data to a persistent file."
+    /param "name (string)"
+    /param "unparsedGroups (string)  Numbers separated by spaces"
+    /return "(string|null)  An error message, if `unparsedGroups` could not be
+    parsed or the patterns could not be written to a file. `null` on success."
+    SetUsul "(name, unparsedPattern) {
+        usuls = GetUsuls();
+        groups = CreateSparseArray();
+        for each group in SplitString(unparsedPattern, ' ', true) {
+            groupNumber = group + 0;
+            if (group != groupNumber) {
+                return 'Can not parse \'' & group & '\' as a number';
+            }
+            if (groupNumber = 0) {
+                return 'Group length must not be 0';
+            }
+            groups.Push(group + 0);
+        }
+        usuls[name] = groups;
+        return WriteUsulsToFile();
+    }"
+
+
+    /return "(string|null)  An error message if the file could not be written.
+    `null` on success."
+    WriteUsulsToFile "() {
+        usulFile = GetUsulFile();
+        if (not Sibelius.CreateTextFile(usulFile)) {
+            return 'Could not reset file ' & usulFile;
+        }
+        for each Name usul in Usuls {
+            csvLine = usul & ',' & Usuls[usul].Join(',');
+            if (not Sibelius.AppendLineToFile(csvLine)) {
+                return 'Could not write to file ' & usulFile;
+            }
+        }
+        return null;
+    }"
+
+
+    ShowHelp "() {
+        Sibelius.MessageBox('Not implemented yet');
+    }"
+
+
+    ///"This function can be used to return an error state for functions that
+    return objects."
+    /return "(Dictionary<string>)  A Dictionary with a single key `error` that
+    is an error message. The `message` argument is concatenated with information
+    about the position the error stems from in the music."
+    error "(message, bar, groupIndex) {
+        if (groupIndex >= 0) {
+            groupInfo = ', group ' & (groupIndex + 1);
+        } else {
+            groupInfo = '';
+        }
+        return CreateDictionary(
+            'error',
+            message & ', bar ' & bar.BarNumber & ' (Division ' & bar.ExternalBarNumberString & ')' & groupInfo
+        );
+    }"
+
+
+    /param "bar (Bar)"
+    /return "SparseArray<SymbolItem>  An array of all start and end brackets.
+    An array of the positions of start brackets (rounded to quarter beats) is
+    stored under the user property key `startPositions`."
+    CheckExistingBrackets "(bar) {
+        brackets = CreateSparseArray();
+        for each Symbol symbol in bar {
+            if (symbol.Index = StartSymbol or symbol.Index = EndSymbol) {
+                brackets.Push(symbol);
+                symbol._property:roundedPosition = (
+                    Round(symbol.Position / AlignmentGridSize) * AlignmentGridSize
+                );
+            }
+        }
+
+        return brackets;
+    }"
+
+
+    DivisionInfo "(bar, groupIndex) {
+        if (groupIndex >= 0) {
+            groupInfo = ', group ' & (groupIndex + 1);
+        } else {
+            groupInfo = '';
+        }
+        return ' staff ' & bar.ParentStaff.StaffNum & ', bar ' & bar.BarNumber & ' (Division ' & bar.ExternalBarNumberString & ')' & groupInfo;
+    }"
+
+
+    /param "score (Score)"
+    /param "barNumber (int)"
+    /return "(SparseArray<SparseArray<NoteRest>>|Error)  Keys of SparseArray are
+    the positions of the NoteRests, from all the staves in the given bar.  An
+    error Dictionary is returned if NoteRests were found that are not voice 1.
+    All NoteRests have a user property named `precedingPosition` set."
+    CollectNoteRestsByPosition "(score, barNumber) {
+        noteRestsByPosition = CreateSparseArray();
+
+        for staffNum = 1 to score.StaffCount + 1 {
+            bar = score.NthStaff(staffNum).NthBar(barNumber);
+            for each NoteRest noteRest in bar {
+                if (noteRest.VoiceNumber != 1) {
+                    return error('Unexpected voice ' & noteRest.VoiceNumber & ' on staff ' & staffNumber, bar, -1);
+                }
+                noteRestsAtPosition = noteRestsByPosition[noteRest.Position];
+                // Create entry if it's not already present
+                if ('' = noteRestsAtPosition) {
+                    noteRestsAtPosition = CreateSparseArray();
+                    noteRestsByPosition[noteRest.Position] = noteRestsAtPosition;
+                }
+                noteRestsAtPosition.Push(noteRest);
+            }
+        }
+
+        precedingPosition = -1;
+        for each position in noteRestsByPosition.ValidIndices {
+            for each noteRest in noteRestsByPosition[position] {
+                noteRest._property:precedingPosition = precedingPosition;
+            }
+            if (position > precedingPosition) {
+                precedingPosition = position;
+            }
+        }
+
+        return noteRestsByPosition;
+    }"
+
+
+    /return "(SparseArray<SparseArray<NoteRest>>)|Error  A SparseArray with all
+    the NoteRests from all bars at `barNumber`.  Keys are the Position values,
+    values are SparseArrays of NoteRests at that position (first all NoteRest at
+    that position from staff 1, then staff 2 and so on).
+
+    Each entry also has a field `noteRestsAtPrecedingPosition`, pointing to the
+    entry at the preceding position."
+    DeterminePositions "(score, barNumber, groupStarts) {
+        noteRestsByPosition = CollectNoteRestsByPosition(score, barNumber);
+        if (noteRestsByPosition._property:error) {
+            return noteRestsByPosition._property:error;
+        }
+
+        positions = CreateSparseArray();
+        offsets = CreateSparseArray();
+        precedingNoteRest = null;
+
+        i = 0;
+        for each noteRestsAtPosition in noteRestsByPosition {
+            noteRest = noteRestsAtPosition[0];
+            switch (true) {
+                case (groupStarts[i] = noteRest.Position) {
+                    positions.Push(noteRest.Position);
+                    offsets.Push(noteRest.Dx + StartSymbolDx);
+                }
+            }
+            if (noteRest.Position) {
+                ;
+            }
+            precedingNoteRest = noteRest;
+        }
+
+
+
+        for groupIndex = 0 to groupStarts.Length {
+            groupStartPosition = groupStartPosition[groupIndex];
+            if (groupStartPosition > 0) {
+                ;
+            }
+            noteRestsAtPosition = noteRestsByPosition[groupStartPosition];
+            if (null = noteRestsAtPosition) {
+                return error('Missing start note for group', bar, groupIndex);
+            }
+
+        }
+
+
+        return noteRestsByPosition;
+    }"
+
+
+    DetermineBracketPositions "(noteRestsByPosition, groupStarts) {
+        bracketPositions = CreateSparseArray();
+
+        noteRestsAtGroupStart = '';
+
+        for each groupStart in groupStarts {
+            if (groupStart > 0) {
+                if ('' = noteRestsAtGroupStart or '' = noteRestsAtGroupStart.noteRestsAtPrecedingPosition) {
+                    return error('Group processing error', barNumber, -1);
+                }
+                bracketPositions.Push();
+            }
+            noteRestsAtGroupStart = noteRestsByPosition[groupStart];
+            if ('' = noteRestsAtGroupStart or noteRestsAtGroupStart[0].ParentBar.ParentStaff.StaffNum != 1) {
+                bracketPositions.error = 'Need a note/rest on staff 1 to anchor start bracket to in bar ' & barNumber;
+                return bracketPositions;
+            }
+        }
+
+        return noteRestsByPosition;
+    }"
+
+
+    PositionSymbol "(symbol, start) {
+        symbol.Dy = SymbolDy;
+        if (start) {
+            symbol.Dx = StartSymbolDx;
+        } else {
+            symbol.Dx = EndSymbolDx;
+        }
+    }"
+
+
+    GroupInfo "(bar, groupIndex) {
+        return ' group ' & (groupIndex + 1) & ' in bar ' & bar.BarNumber;
+    }"
+
+
+    /return "(string)  An empty string on success, otherwise an error message."
+    ReanchorBrackets "(bar, existingBrackets, groupStarts) {
+        ;
+    }"
+
+
+    /param "bar (Bar)"
+    /param "groupStarts (SparseArray<int>)  Positions of bracket starts"
+    /return "(SparseArray<int>)  Positions of the end events that group end
+    brackets is to be anchored to.  If staff 1 only has the start event, then
+    staff 2 will be searched for an end event.  If both only have the start
+    event, then the closing bracket will be anchored at half the duration of the
+    start event."
+    CollectGroupEnds "(bar, groupStarts) {
+        ;
+    }"
+
+
+    /param "selection (Selection|Score)"
+    /param "groups (SparseArray<int>)  A list of group durations, measured in
+    eighth notes."
+    /return "(string)  An empty string on success, otherwise an error message."
+    CreateBrackets "(selection, groups) {
+        nextGroupStart = 0;
+        groupStarts = CreateSparseArray();
+        for each groupLength in groups {
+            groupStarts.Push(nextGroupStart);
+            nextGroupStart = nextGroupStart + (groupLength * 128);
+        }
+        expectedBarLength = nextGroupStart;
+
+        for each Bar bar in selection {
+            if (bar.Length != expectedBarLength) {
+                return 'Unexpected bar length for bar ' & bar.ExternalBarNumberString & '. Split bars are not supported yet';
+            }
+
+            existingBrackets = CollectBrackets(bar);
+            if (existingBrackets._property:error) {
+                return error;
+            }
+
+            if (existingBrackets.startPositions.Length > 0 and existingBrackets.startPositions != groupStarts) {
+                return 'Bar ' & bar.BarNumber & ' has deviating pre-existing bracket positions';
+            }
+
+            for each bracket in existingBrackets {
+                bracket.Delete();
+            }
+
+
+        }
+    }"
+
+
+    Dialog.SaveUsul "() {
+        ;
+    }"
+
+
+    Dialog.DeleteUsul "() {
+        ;
+    }"
+
+
+    SelectionIsEmpty "(selection) {
+        for each object in selection {
+            return false;
+        }
+        return true;
+    }"
+
+
+
+
+
+    ////////"The attic"////////
+    CollectNoteRests "(bar) {
+        a = CreateSparseArray();
+        for each NoteRest noteRest in bar {
+            if (noteRest.VoiceNumber != 1) {
+                return null;
+            }
+            a.Push(noteRest);
+        }
+        return a;
+    }"
+
+
+    /param "noteRests (SparseArray<NoteRest>)"
+    /param "position1 (int)"
+    /param "position2 (int)"
+    /param "startIndex (int)  The index to start searching in `noteRests` for a
+    matching NoteRest"
+    /return "(int)  Index of the last NoteRest from `noteRests` with a `Position`
+    property between `position1` and `position2`."
+    LastNoteRestBetween "(noteRests, position1, position2, startIndex) {
+        foundIndex = -1;
+        for i = startIndex to noteRests.Length {
+            position = noteRests[i].Position;
+            if (position >= position2) {
+                return foundIndex;
+            }
+            if (position > position1) {
+                foundIndex = i;
+            }
+        }
+        return foundIndex;
+    }"
+
+
+}
