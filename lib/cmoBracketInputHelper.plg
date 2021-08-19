@@ -43,12 +43,24 @@
     }"
 
 
-    RefreshUsulChoices "(usuls, usul) {
+    ///"Sets the selected usul (both in the dropdown and in the text fields) to
+    `usul`.  If `usul` is not found int the list of usuls, then the first usul
+    of the dropdown menu is chosen."
+    /param "usul (string)"
+    RefreshUsulChoices "(usul) {
+        usuls = GetUsuls();
         UsulChoices = CreateArray();
-        for each Name usulName in GetUsuls() {
+        for each Name usulName in usuls {
             UsulChoices[UsulChoices.NumChildren] = usulName;
         }
-        UsulChoice = usul;
+        if (null != usuls[usul]) {
+            UsulChoice = usul;
+        } else {
+            UsulChoice = UsulChoices[0];
+        }
+
+        DlgUsulName = UsulChoice;
+        DlgUsulGroups = usuls[UsulChoice].Join(' ');
     }"
 
 
@@ -62,14 +74,7 @@
         } else {
             usulName = usulText.usul;
         }
-        RefreshUsulChoices(usuls, usulName);
-        DlgUsulName = usulName;
-
-        if (null != usuls[usulName]) {
-            DlgUsulGroups = usuls[usulName].Join(' ');
-        } else {
-            DlgUsulGroups = '';
-        }
+        RefreshUsulChoices(usulName);
 
         return Sibelius.ShowDialog(Dialog, Self);
     }"
@@ -416,10 +421,16 @@
         if ('' = UsulChoice) {
             UsulChoice = DlgUsulName;
         }
-        RefreshUsulChoices(usuls, UsulChoice);
+        RefreshUsulChoices(DlgUsulName);
         Sibelius.RefreshDialog();
 
         return true;
+    }"
+
+
+    Dialog.ChooseUsul "() {
+        RefreshUsulChoices(UsulChoice);
+        Sibelius.RefreshDialog();
     }"
 
 
