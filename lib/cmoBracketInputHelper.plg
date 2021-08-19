@@ -145,6 +145,25 @@
     }"
 
 
+    DeleteUsul "(usulToDelete) {
+        oldUsuls = GetUsuls();
+        newUsuls = CreateDictionary();
+        for each Name usulName in oldUsuls {
+            if (usulName != usulToDelete) {
+                newUsuls[usulName] = oldUsuls[usulName];
+            }
+        }
+
+        if (oldUsuls - newUsuls != 1) {
+            Trace('Error deleting usul');
+            return false;
+        }
+
+        Self._property:Usuls = newUsuls;
+        return WriteUsulsToFile();
+    }"
+
+
     /return "(string|null)  An error message if the file could not be written.
     `null` on success."
     WriteUsulsToFile "() {
@@ -435,7 +454,11 @@
 
 
     Dialog.DeleteUsul "() {
-        ;
+        if (Sibelius.YesNoMessageBox('Delete usul ' & UsulChoice & '?')) {
+            DeleteUsul(UsulChoice);
+            RefreshUsulChoices('');
+            Sibelius.RefreshDialog();
+        }
     }"
 
 
@@ -624,7 +647,7 @@
                 DefaultButton "0"
                 ID "IDC_BUTTON"
                 Value
-                Method "DlgDeleteUsul"
+                Method "Dialog.DeleteUsul"
                 SetFocus "0"
             }
             Button
