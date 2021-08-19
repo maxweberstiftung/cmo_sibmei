@@ -1,0 +1,49 @@
+{
+    PLGTITLE "Test CMO bracket input helper"
+
+    Initialize "() {
+        AddToPluginsMenu(PLGTITLE, 'Run');
+    }"
+
+
+    InitGlobals "() {
+        if (Self._property:Initialized) {
+            return null;
+        }
+        Self._property:Initialized = true;
+    }"
+
+
+    Run "() {
+        Self._property:TestDir = cmo_sibmei.GetPluginDir(PLGTITLE) & 'bracketTestFiles' & Sibelius.PathSeparator;
+
+        suite = Test.Suite(PLGTITLE, Self, Self);
+        suite
+            .Add('TestUsulDetection')
+        ;
+        suite.Run();
+    }"
+
+
+    TestUsulDetection "(assert, plugin) {
+        score = OpenTestScore(assert, 'usulName.sib');
+        assert.Equal('Aksak semâî', cmoBracketInputHelper.GetUsulText(score).usul, 'Find usul by text style');
+    }"
+
+
+    OpenTestScore "(assert, fileName) {
+        filePath = TestDir & fileName;
+        score = null;
+        if (Sibelius.Open(filePath)) {
+            i = Sibelius.ScoreCount;
+            while (null = score and i > 0) {
+                i = i - 1;
+                if (Sibelius.NthScore(i).FileName = filePath) {
+                    score = Sibelius.NthScore(i);
+                }
+            }
+        }
+        assert.OK(null != score, 'Should open ' & filePath);
+        return score;
+    }"
+}

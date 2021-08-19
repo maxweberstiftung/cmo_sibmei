@@ -71,6 +71,24 @@
     }"
 
 
+    ///"Searches the Sibelius file for a text item with style `Usûl` and tries
+    to extract the usul name."
+    /param "score (Score)"
+    /return "(SystemTextItem|Error)"
+    GetUsulText "(score) {
+        for each SystemTextItem text in score.SystemStaff {
+            if (text.StyleAsText = 'Usûl') {
+                prefix = Substring(text.Text, 0, 6);
+                if (prefix != 'Usûl: ') {
+                    return CreateDictionary('error', 'Usûl text item is expected start with \'Usûl: \', but it starts with \'' & prefix & '\'');
+                }
+                text._property:usul = Substring(text.Text, 6);
+                return text;
+            }
+        }
+    }"
+
+
     ///"Adds (or overwrites) an usul int the global `Usuls` Dictionary and writes
     the updated data to a persistent file."
     /param "name (string)"

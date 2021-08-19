@@ -2,7 +2,7 @@ var config = {
   plgPath:         './build',
   plgCategory:    'CMO Export',
   pluginFilename: 'cmo_sibmei.plg',
-  linkLibraries:  [ ],
+  linkLibraries: [ 'cmoBracketInputHelper.plg', 'testCmoBracketInputHelper.plg', 'bracketTestFiles' ],
   importDir:      './import',
   buildDir:       './build',
   srcDir:         './src',
@@ -11,4 +11,3 @@ var config = {
 };
 
 module.exports = config;
-
