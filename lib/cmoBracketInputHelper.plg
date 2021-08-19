@@ -4,7 +4,7 @@
 
     UsulChoices
     UsulChoice
-    DlgUsulNama
+    DlgUsulName
     DlgUsulGroups
 
 
@@ -26,10 +26,10 @@
 
     Run "() {
         InitGlobals();
-        if (not Sibelius.ShowDialog(Self, Dialog)) {
+        score = Sibelius.ActiveScore;
+        if (not ShowDialog(score)) {
             return '';
         }
-        score = Sibelius.ActiveScore;
         if (SelectionIsEmpty(score.Selection)) {
             selection = score;
         } else {
@@ -40,6 +40,38 @@
         if (error) {
             Sibelius.MessageBox(error & '\n\nProcessing was interrupted.');
         }
+    }"
+
+
+    RefreshUsulChoices "(usuls, usul) {
+        UsulChoices = CreateArray();
+        for each Name usulName in GetUsuls() {
+            UsulChoices[UsulChoices.NumChildren] = usulName;
+        }
+        UsulChoice = usul;
+    }"
+
+
+    ShowDialog "(score) {
+        usuls = GetUsuls();
+        // Prepare what to display in dialog
+        usulText = GetUsulText(score);
+        if (usulText._property:error) {
+            Sibelius.MessageBox(usulText.error);
+            usulName = '';
+        } else {
+            usulName = usulText.usul;
+        }
+        RefreshUsulChoices(usuls, usulName);
+        DlgUsulName = usulName;
+
+        if (null != usuls[usulName]) {
+            DlgUsulGroups = usuls[usulName].Join(' ');
+        } else {
+            DlgUsulGroups = '';
+        }
+
+        return Sibelius.ShowDialog(Dialog, Self);
     }"
 
 
@@ -62,7 +94,13 @@
             fields = SplitString(line, ',');
             usulName = fields[0];
             groupLengths = CreateSparseArray();
-            for i = 1 to fields.Length {
+            if (fields.NumChildren < 2) {
+                Trace('Malformed line in ' & GetUsulFile() & ':\n' & line);
+                // Not returning a Dictionary will crash the plugin, but that's
+                // O.K. for now.
+                return '';
+            }
+            for i = 1 to fields.NumChildren {
                 groupLengths.Push(fields[i] + 0);
             }
             Usuls[usulName] = groupLengths;
@@ -95,19 +133,8 @@
     /param "unparsedGroups (string)  Numbers separated by spaces"
     /return "(string|null)  An error message, if `unparsedGroups` could not be
     parsed or the patterns could not be written to a file. `null` on success."
-    SetUsul "(name, unparsedPattern) {
+    SetUsul "(name, groups) {
         usuls = GetUsuls();
-        groups = CreateSparseArray();
-        for each group in SplitString(unparsedPattern, ' ', true) {
-            groupNumber = group + 0;
-            if (group != groupNumber) {
-                return 'Can not parse \'' & group & '\' as a number';
-            }
-            if (groupNumber = 0) {
-                return 'Group length must not be 0';
-            }
-            groups.Push(group + 0);
-        }
         usuls[name] = groups;
         return WriteUsulsToFile();
     }"
@@ -122,7 +149,7 @@
         }
         for each Name usul in Usuls {
             csvLine = usul & ',' & Usuls[usul].Join(',');
-            if (not Sibelius.AppendLineToFile(csvLine)) {
+            if (not Sibelius.AppendLineToFile(usulFile, csvLine)) {
                 return 'Could not write to file ' & usulFile;
             }
         }
@@ -369,7 +396,30 @@
 
 
     Dialog.SaveUsul "() {
-        ;
+        usuls = GetUsuls();
+        groupLengths = CreateSparseArray();
+        for each value in SplitString(DlgUsulGroups, ' ', true) {
+            // Cast TreeNode to string
+            stringValue = value & '';
+            numberValue = Round(value);
+            if (stringValue != numberValue) {
+                Sibelius.MessageBox('Usul group lengths must be numbers separated by space characters. Please correct the input.');
+                return false;
+            }
+            groupLengths.Push(numberValue);
+        }
+        if (groupLengths.Length = 0) {
+            Sibelius.MessageBox('The usul groups field must have at least one number. Please correct the input.');
+            return false;
+        }
+        SetUsul(DlgUsulName, groupLengths);
+        if ('' = UsulChoice) {
+            UsulChoice = DlgUsulName;
+        }
+        RefreshUsulChoices(usuls, UsulChoice);
+        Sibelius.RefreshDialog();
+
+        return true;
     }"
 
 
@@ -390,6 +440,8 @@
 
 
     ////////"The attic"////////
+
+
     CollectNoteRests "(bar) {
         a = CreateSparseArray();
         for each NoteRest noteRest in bar {
@@ -424,4 +476,159 @@
     }"
 
 
+    Dialog "Dialog"
+    {
+        Title "Choose usul"
+        X "144"
+        Y "261"
+        Width "200"
+        Height "208"
+        Controls
+        {
+            Text
+            {
+                Title "Usuls"
+                X "5"
+                Y "5"
+                Width "60"
+                Height "14"
+                RightAlign "0"
+                ID "IDC_USULS_STATIC"
+                Value
+                Method
+                SetFocus "0"
+            }
+            Text
+            {
+                Title "Usul name"
+                X "5"
+                Y "21"
+                Width "60"
+                Height "14"
+                RightAlign "0"
+                ID "IDC_USUL_NAME_STATIC"
+                Value
+                Method
+                SetFocus "0"
+            }
+            Text
+            {
+                Title "Groups lengths in 𝆕"
+                X "6"
+                Y "37"
+                Width "60"
+                Height "14"
+                RightAlign "0"
+                ID "IDC_STATIC"
+                Value
+                Method
+                SetFocus "0"
+            }
+            ComboBox
+            {
+                Title
+                X "65"
+                Y "4"
+                Width "60"
+                Height "13"
+                ListVar "UsulChoices"
+                AllowMultipleSelections "0"
+                ID "IDC_USULCHOICES_COMBO"
+                Value "UsulChoice"
+                Method "Dialog.ChooseUsul"
+                SetFocus "0"
+            }
+            Edit
+            {
+                Title
+                X "65"
+                Y "20"
+                Width "60"
+                Height "14"
+                ID "IDC_DLGUSULNAME_EDIT"
+                Value "DlgUsulName"
+                Method
+                SetFocus "0"
+            }
+            Edit
+            {
+                Title
+                X "65"
+                Y "36"
+                Width "60"
+                Height "14"
+                ID "IDC_DLGUSULGROUPS_EDIT"
+                Value "DlgUsulGroups"
+                Method
+                SetFocus "0"
+            }
+            Button
+            {
+                Title "Help"
+                X "5"
+                Y "52"
+                Width "50"
+                Height "14"
+                DefaultButton "0"
+                ID "IDC_HELP_BUTTON"
+                Value
+                Method "ShowHelp"
+                SetFocus "0"
+            }
+            Button
+            {
+                Title "Close Dialog"
+                X "58"
+                Y "52"
+                Width "50"
+                Height "14"
+                DefaultButton "0"
+                ID "IDC_CANCEL_BUTTON"
+                Value
+                Method
+                SetFocus "0"
+                EndDialog "0"
+            }
+            Button
+            {
+                Title "Create brackets"
+                X "140"
+                Y "52"
+                Width "50"
+                Height "14"
+                DefaultButton "0"
+                ID "IDC_APPLY_GROUPS_BUTTON"
+                Value
+                Method
+                SetFocus "0"
+                EndDialog "1"
+            }
+            Button
+            {
+                Title "Delete Usul"
+                X "140"
+                Y "4"
+                Width "50"
+                Height "14"
+                DefaultButton "0"
+                ID "IDC_BUTTON"
+                Value
+                Method "DlgDeleteUsul"
+                SetFocus "0"
+            }
+            Button
+            {
+                Title "Save usul"
+                X "140"
+                Y "28"
+                Width "50"
+                Height "14"
+                DefaultButton "0"
+                ID "IDC_BUTTON2"
+                Value
+                Method "Dialog.SaveUsul"
+                SetFocus "0"
+            }
+        }
+    }
 }
