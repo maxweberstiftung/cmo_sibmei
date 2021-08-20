@@ -340,6 +340,16 @@
     }"
 
 
+    /param "selection (Selection|Staff)"
+    CollectBars "(selection) {
+        bars = CreateSparseArray();
+        for each Bar bar in selection {
+            bars.Push(bar);
+        }
+        return bars;
+    }"
+
+
     /param "selection (Selection|Score)"
     /param "groups (SparseArray<int>)  A list of group durations, measured in
     eighth notes."
@@ -353,7 +363,22 @@
         }
         expectedBarLength = nextGroupStart;
 
-        for each Bar bar in selection {
+        bars = CollectBars(selection);
+
+        Sibelius.CreateProgressDialog('Adding brackets', 0, bars.Length);
+        Sibelius.ResetStopWatch(1);
+        for i = 0 to bars.Length {
+            bar = bars[i];
+            // Update progress dialog at most 5 times per second to speed up
+            // processing
+            if (Sibelius.GetElapsedMilliSeconds(1) > 200) {
+                message = 'Bar ' & bar.BarNumber & ' (division ' & bar.ExternalBarNumberString & ')';
+                if (not Sibelius.UpdateProgressDialog(i, message)) {
+                    return 'Cancelled';
+                }
+                Sibelius.ResetStopWatch(1);
+            }
+
             if (bar.Length != expectedBarLength) {
                 return 'Unexpected bar length for bar ' & bar.ExternalBarNumberString & '. Split bars are not supported yet';
             }
@@ -410,6 +435,7 @@
                 }
             }
         }
+        Sibelius.DestroyProgressDialog();
     }"
 
 
