@@ -206,16 +206,18 @@
 
     /param "bar (Bar)"
     /return "SparseArray<SymbolItem>  An array of all start and end brackets.
-    An array of the positions of start brackets (rounded to quarter beats) is
+    An array of the positions of start brackets (rounded to eighth beats) is
     stored under the user property key `startPositions`."
-    CheckExistingBrackets "(bar) {
+    CollectBrackets "(bar) {
         brackets = CreateSparseArray();
-        for each Symbol symbol in bar {
+        brackets._property:startPositions = CreateSparseArray();
+        for each SymbolItem symbol in bar {
             if (symbol.Index = StartSymbol or symbol.Index = EndSymbol) {
                 brackets.Push(symbol);
-                symbol._property:roundedPosition = (
-                    Round(symbol.Position / AlignmentGridSize) * AlignmentGridSize
-                );
+                if (symbol.Index = StartSymbol) {
+                    startPosition = Round(symbol.Position / AlignmentGridSize) * AlignmentGridSize;
+                    brackets.startPositions.Push(startPosition);
+                }
             }
         }
 
