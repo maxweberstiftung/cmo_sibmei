@@ -308,14 +308,17 @@
     }"
 
 
-    PositionSymbol "(symbol) {
+    /param "symbol (SymbolItem)  A bracket symbol"
+    /param "dx (number)  An additional dx offset, e.g. for grace notes"
+    /return "error (string)  An error message, or the empty string"
+    PositionSymbol "(symbol, dx) {
         symbol.Dy = SymbolDy;
         switch (symbol.Index) {
             case (StartSymbol) {
-                symbol.Dx = StartSymbolDx;
+                symbol.Dx = StartSymbolDx + dx;
             }
             case (EndSymbol) {
-                symbol.Dx = EndSymbolDx;
+                symbol.Dx = EndSymbolDx + dx;
             }
             default {
                 return 'No positioning information available for symbol ' & symbolIndex;
@@ -389,7 +392,7 @@
             for i = 0 to anchorNoteRests.Length step 2 {
                 startNoteRest = anchorNoteRests[i];
                 startSymbol = bar.AddSymbol(startNoteRest.Position, StartSymbol);
-                error = PositionSymbol(startSymbol);
+                error = PositionSymbol(startSymbol, startNoteRest.Dx);
                 if (null != error) {
                     return error;
                 }
@@ -413,7 +416,7 @@
                 }
                 endPosition = (endPosition + endNoteRest.Position) / 2;
                 endSymbol = bar.AddSymbol(endPosition, EndSymbol);
-                error = PositionSymbol(endSymbol);
+                error = PositionSymbol(endSymbol, endNoteRest.Dx);
                 if (null != error) {
                     return error;
                 }
