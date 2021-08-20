@@ -27,7 +27,7 @@
 
     TestUsulDetection "(assert, plugin) {
         score = OpenTestScore(assert, 'usulName.sib');
-        assert.Equal('Aksak semâî', cmoBracketInputHelper.GetUsulText(score).usul, 'Find usul by text style');
+        assert.Equal('Aksak semâî', cmoBrackets.GetUsulText(score).usul, 'Find usul by text style');
     }"
 
 

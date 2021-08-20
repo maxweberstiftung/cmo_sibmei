@@ -1,6 +1,6 @@
 {
     PLGTITLE "CMO bracket input helper"
-    PLGNAME "cmoBracketInputHelper"
+    PLGNAME "cmoBrackets"
 
     UsulChoices
     UsulChoice
