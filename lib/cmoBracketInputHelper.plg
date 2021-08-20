@@ -464,46 +464,6 @@
     }"
 
 
-
-
-
-    ////////"The attic"////////
-
-
-    CollectNoteRests "(bar) {
-        a = CreateSparseArray();
-        for each NoteRest noteRest in bar {
-            if (noteRest.VoiceNumber != 1) {
-                return null;
-            }
-            a.Push(noteRest);
-        }
-        return a;
-    }"
-
-
-    /param "noteRests (SparseArray<NoteRest>)"
-    /param "position1 (int)"
-    /param "position2 (int)"
-    /param "startIndex (int)  The index to start searching in `noteRests` for a
-    matching NoteRest"
-    /return "(int)  Index of the last NoteRest from `noteRests` with a `Position`
-    property between `position1` and `position2`."
-    LastNoteRestBetween "(noteRests, position1, position2, startIndex) {
-        foundIndex = -1;
-        for i = startIndex to noteRests.Length {
-            position = noteRests[i].Position;
-            if (position >= position2) {
-                return foundIndex;
-            }
-            if (position > position1) {
-                foundIndex = i;
-            }
-        }
-        return foundIndex;
-    }"
-
-
     Dialog "Dialog"
     {
         Title "Choose usul"
