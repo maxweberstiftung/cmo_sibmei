@@ -191,7 +191,7 @@
     /return "(Dictionary<string>)  A Dictionary with a single key `error` that
     is an error message. The `message` argument is concatenated with information
     about the position the error stems from in the music."
-    error "(message, bar, groupIndex) {
+    Error "(message, bar, groupIndex) {
         if (groupIndex >= 0) {
             groupInfo = ', group ' & (groupIndex + 1);
         } else {
@@ -250,7 +250,7 @@
             bar = score.NthStaff(staffNum).NthBar(barNumber);
             for each NoteRest noteRest in bar {
                 if (noteRest.VoiceNumber != 1) {
-                    return error('Unexpected voice ' & noteRest.VoiceNumber & ' on staff ' & staffNumber, bar, -1);
+                    return Error('Unexpected voice ' & noteRest.VoiceNumber & ' on staff ' & staffNumber, bar, -1);
                 }
                 noteRestsAtPosition = noteRestsByPosition[noteRest.Position];
                 // Create entry if it's not already present
@@ -292,7 +292,7 @@
             noteRestsAtPosition = noteRestsByPosition[position];
 
             if (position > groupStarts[i]) {
-                return error('Did not find expected anchor note at the start of group', noteRestsAtPosition.leftmost.ParentBar, i);
+                return Error('Did not find expected anchor note at the start of group', noteRestsAtPosition.leftmost.ParentBar, i);
             }
 
             if (position = groupStarts[i]) {
@@ -305,7 +305,7 @@
                     // We've reached the last group
                     anchors.Push(noteRestsByPosition[noteRestsByPosition.Length - 1].rightmost);
                     if (anchors.Length != (2 * groupStarts.Length)) {
-                        return error('Did not find all expected anchor notes', noteRestsAtPosition.leftmost.ParentBar, -1);
+                        return Error('Did not find all expected anchor notes', noteRestsAtPosition.leftmost.ParentBar, -1);
                     }
                     return anchors;
                 }
@@ -314,7 +314,7 @@
             precedingNoteRest = noteRestsAtPosition.rightmost;
         }
 
-        return error();
+        return Error();
     }"
 
 
