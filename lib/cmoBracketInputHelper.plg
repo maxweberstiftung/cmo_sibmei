@@ -373,25 +373,25 @@
             }
 
             score = bar.ParentStaff.ParentScore;
-            anchoredNoteRests = CollectAnchorNoteRests(score, bar.BarNumber, groups);
-            for i = 0 to anchoredNoteRests.Length step 2 {
-                startNoteRest = anchoredNoteRests[i];
+            anchorNoteRests = CollectAnchorNoteRests(score, bar.BarNumber, groups);
+            for i = 0 to anchorNoteRests.Length step 2 {
+                startNoteRest = anchorNoteRests[i];
                 startSymbol = bar.AddSymbol(startNoteRest.Position, StartSymbol);
                 error = PositionSymbol(startSymbol);
                 if (null != error) {
                     return error;
                 }
 
-                endNoteRest = anchoredNoteRests[i + 1];
+                endNoteRest = anchorNoteRests[i + 1];
                 switch (true) {
                     case (endNoteRest.Position > startNoteRest.Position) {
                         // The end bracket can be anchored directly on the note
                         endPosition = endNoteRest.Position;
                     }
-                    case (anchoredNoteRests.Length > i + 2) {
+                    case (anchorNoteRests.Length > i + 2) {
                         // The end bracket is anchored halfway between the group
                         // start note and the next group start note
-                        endPosition = anchoredNoteRests[i + 2].Position;
+                        endPosition = anchorNoteRests[i + 2].Position;
                     }
                     default {
                         // The end bracket is anchored halfway between the groups
