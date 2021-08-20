@@ -374,6 +374,9 @@
 
             score = bar.ParentStaff.ParentScore;
             anchorNoteRests = CollectAnchorNoteRests(score, bar.BarNumber, groups);
+            if (null != anchorNoteRests._property:error) {
+                return anchorNoteRests.error;
+            }
             for i = 0 to anchorNoteRests.Length step 2 {
                 startNoteRest = anchorNoteRests[i];
                 startSymbol = bar.AddSymbol(startNoteRest.Position, StartSymbol);
