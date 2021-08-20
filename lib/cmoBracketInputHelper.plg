@@ -380,7 +380,7 @@
             }
 
             if (bar.Length != expectedBarLength) {
-                return 'Unexpected bar length for bar ' & bar.ExternalBarNumberString & '. Split bars are not supported yet';
+                return 'Bar ' & bar.BarNumber & ' (division ' & bar.ExternalBarNumberString & ') has ' & (Bar.Length / 128) & ' eighth notes, but the selected usûl pattern is ' & (expectedBarLength / 128) & ' eighths long';
             }
 
             existingBrackets = CollectBrackets(bar);
@@ -389,7 +389,7 @@
             }
 
             if (existingBrackets.startPositions.Length > 0 and existingBrackets.startPositions != groupStarts) {
-                return 'Bar ' & bar.BarNumber & ' has deviating pre-existing bracket positions';
+                return 'Bar ' & bar.BarNumber & ' has pre-existing brackets that deviate from the current usûl pattern';
             }
 
             // TODO: Don't touch brackets if they're already O.K.
@@ -619,7 +619,7 @@
             }
             Button
             {
-                Title "Delete Usul"
+                Title "Delete Usûl"
                 X "140"
                 Y "4"
                 Width "50"
@@ -632,7 +632,7 @@
             }
             Button
             {
-                Title "Save usul"
+                Title "Save usûl"
                 X "140"
                 Y "28"
                 Width "50"
