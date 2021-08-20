@@ -235,17 +235,13 @@
     }"
 
 
-    SortByDx "(noteRest1, noteRest2) {
-        return noteRest2.Dx > noteRest1.Dx;
-    }"
-
-
     /param "score (Score)"
     /param "barNumber (int)"
-    /return "(SparseArray<SparseArray<NoteRest>>|Error)  Keys of SparseArray are
-    the positions of the NoteRests, from all the staves in the given bar.  An
-    error Dictionary is returned if NoteRests were found that are not voice 1.
-    All NoteRests have a user property named `precedingPosition` set."
+    /return "(SparseArray<Dictionary<NoteRest>>|Error)  Keys of SparseArray are
+    the positions of the NoteRests, from all the staves in the given bar.  Values
+    are Dictionary with entries `leftmost` and `rightmost` (leftmost and the
+    rightmost NoteRests, based on their `Dx` property).  An error Dictionary is
+    returned if NoteRests were found that are not voice 1."
     CollectNoteRestsByPosition "(score, barNumber) {
         noteRestsByPosition = CreateSparseArray();
         precedingNoteRest = null;
@@ -256,27 +252,23 @@
                 if (noteRest.VoiceNumber != 1) {
                     return error('Unexpected voice ' & noteRest.VoiceNumber & ' on staff ' & staffNumber, bar, -1);
                 }
-                if (noteRest.GraceNote and noteRest.Dx > 0) {
-                    return error('Can not handle grace note that are shifted to the right, on staff ' & staffNumber, bar, -1);
-                }
                 noteRestsAtPosition = noteRestsByPosition[noteRest.Position];
                 // Create entry if it's not already present
-                if ('' = noteRestsAtPosition) {
-                    noteRestsAtPosition = CreateSparseArray();
-                    noteRestsByPosition[noteRest.Position] = noteRestsAtPosition;
+                switch (true) {
+                    case (null = noteRestsAtPosition) {
+                        noteRestsByPosition[noteRest.Position] = CreateDictionary(
+                            'leftmost', noteRest,
+                            'rightmost', noteRest
+                        );
+                    }
+                    case (noteRestsAtPosition.leftmost.Dx > noteRest.Dx) {
+                        noteRestsAtPosition.leftmost = noteRest;
+                    }
+                    case (noteRestsAtPosition.rightmost.Dx < noteRest.Dx) {
+                        noteRestsAtPosition.rightmost = noteRest;
+                    }
                 }
-                noteRestsAtPosition.Push(noteRest);
             }
-        }
-
-        precedingPosition = -1;
-        for each position in noteRestsByPosition.ValidIndices {
-            noteRestsAtPosition = noteRestsByPosition[position];
-            utils.SortArrayCustom(noteRestsAtPosition, false, Self, 'SortByDx', PLGNAME);
-            for each noteRest in noteRestsAtPosition {
-                noteRest._property:precedingPosition = precedingPosition;
-            }
-            precedingPosition = position;
         }
 
         return noteRestsByPosition;
@@ -298,31 +290,28 @@
         i = 0;
         for each position in noteRestsByPosition.ValidIndices {
             noteRestsAtPosition = noteRestsByPosition[position];
-            firstNoteRest = noteRestsAtPosition[0];
-            lastNoteRest = noteRestsAtPosition[noteRestsAtPosition.Length - 1];
 
             if (position > groupStarts[i]) {
-                return error('Did not find expected anchor note at the start of group', firstNoteRest.ParentBar, i);
+                return error('Did not find expected anchor note at the start of group', noteRestsAtPosition.leftmost.ParentBar, i);
             }
 
             if (position = groupStarts[i]) {
                 if (null != precedingNoteRest) {
                     anchors.Push(precedingNoteRest);
                 }
-                anchors.Push(firstNoteRest);
+                anchors.Push(noteRestsAtPosition.leftmost);
                 i = i + 1;
                 if (i = groupStarts.Length) {
                     // We've reached the last group
-                    noteRestsAtLastPosition = noteRestsByPosition[noteRestsByPosition.Length - 1];
-                    anchors.Push(noteRestsAtLastPosition[noteRestsAtLastPosition.Length - 1]);
+                    anchors.Push(noteRestsByPosition[noteRestsByPosition.Length - 1].rightmost);
                     if (anchors.Length != (2 * groupStarts.Length)) {
-                        return error('Did not find all expected anchor notes', firstNoteRest.ParentBar, -1);
+                        return error('Did not find all expected anchor notes', noteRestsAtPosition.leftmost.ParentBar, -1);
                     }
                     return anchors;
                 }
             }
 
-            precedingNoteRest = lastNoteRest;
+            precedingNoteRest = noteRestsAtPosition.rightmost;
         }
 
         return error();
