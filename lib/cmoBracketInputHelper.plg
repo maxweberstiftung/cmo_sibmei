@@ -37,7 +37,7 @@
         }
         groups = GetUsuls()[UsulChoice];
         error = CreateBrackets(selection, groups);
-        if (error) {
+        if (null != error) {
             Sibelius.MessageBox(error & '\n\nProcessing was interrupted.');
         }
     }"
@@ -68,7 +68,7 @@
         usuls = GetUsuls();
         // Prepare what to display in dialog
         usulText = GetUsulText(score);
-        if (usulText._property:error) {
+        if (null != usulText._property:error) {
             Sibelius.MessageBox(usulText.error);
             usulName = '';
         } else {
@@ -286,8 +286,8 @@
     start brackets, those at odd indices for end brackets."
     CollectAnchorNoteRests "(score, barNumber, groupStarts) {
         noteRestsByPosition = CollectNoteRestsByPosition(score, barNumber);
-        if (noteRestsByPosition._property:error) {
-            return noteRestsByPosition._property:error;
+        if (null != noteRestsByPosition._property:error) {
+            return noteRestsByPosition;
         }
 
         anchors = CreateSparseArray();
@@ -368,7 +368,7 @@
             }
 
             existingBrackets = CollectBrackets(bar);
-            if (existingBrackets._property:error) {
+            if (null != existingBrackets._property:error) {
                 return error;
             }
 
@@ -387,7 +387,7 @@
                 startNoteRest = anchoredNoteRests[i];
                 startSymbol = bar.AddSymbol(startNoteRest.Position, StartSymbol);
                 error = PositionSymbol(startSymbol);
-                if (error) {
+                if (null != error) {
                     return error;
                 }
 
@@ -411,7 +411,7 @@
                 endPosition = (endPosition + endNoteRest.Position) / 2;
                 endSymbol = bar.AddSymbol(endPosition, EndSymbol);
                 error = PositionSymbol(endSymbol);
-                if (error) {
+                if (null != error) {
                     return error;
                 }
             }
