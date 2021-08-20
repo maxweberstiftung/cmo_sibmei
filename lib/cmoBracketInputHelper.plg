@@ -225,16 +225,6 @@
     }"
 
 
-    DivisionInfo "(bar, groupIndex) {
-        if (groupIndex >= 0) {
-            groupInfo = ', group ' & (groupIndex + 1);
-        } else {
-            groupInfo = '';
-        }
-        return ' staff ' & bar.ParentStaff.StaffNum & ', bar ' & bar.BarNumber & ' (Division ' & bar.ExternalBarNumberString & ')' & groupInfo;
-    }"
-
-
     /param "score (Score)"
     /param "barNumber (int)"
     /return "(SparseArray<Dictionary<NoteRest>>|Error)  Keys of SparseArray are
@@ -331,12 +321,6 @@
                 return 'No positioning information available for symbol ' & symbolIndex;
             }
         }
-    }"
-
-
-    /return "(string)  An empty string on success, otherwise an error message."
-    ReanchorBrackets "(bar, existingBrackets, groupStarts) {
-        ;
     }"
 
 
