@@ -523,11 +523,11 @@
 
     Dialog "Dialog"
     {
-        Title "Choose usul"
+        Title "CMO Create brackets"
         X "144"
         Y "261"
         Width "200"
-        Height "208"
+        Height "100"
         Controls
         {
             Text
@@ -581,7 +581,7 @@
                 ID "IDC_USULCHOICES_COMBO"
                 Value "UsulChoice"
                 Method "Dialog.ChooseUsul"
-                SetFocus "0"
+                SetFocus "1"
             }
             Edit
             {
@@ -641,7 +641,7 @@
                 Y "52"
                 Width "50"
                 Height "14"
-                DefaultButton "0"
+                DefaultButton "1"
                 ID "IDC_APPLY_GROUPS_BUTTON"
                 Value
                 Method
