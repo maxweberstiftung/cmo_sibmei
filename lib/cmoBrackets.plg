@@ -367,7 +367,7 @@
             }
 
             if (bar.Length != expectedBarLength) {
-                return 'Bar ' & bar.BarNumber & ' (division ' & bar.ExternalBarNumberString & ') has ' & (Bar.Length / 128) & ' eighth notes, but the selected usûl pattern is ' & (expectedBarLength / 128) & ' eighths long';
+                return 'Bar ' & bar.BarNumber & ' (division ' & bar.ExternalBarNumberString & ') has ' & (bar.Length / 128) & ' eighth notes, but the selected usûl pattern is ' & (expectedBarLength / 128) & ' eighths long';
             }
 
             existingBrackets = CollectBrackets(bar);
