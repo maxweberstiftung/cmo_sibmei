@@ -27,15 +27,32 @@
     Run "() {
         InitGlobals();
         score = Sibelius.ActiveScore;
-        if (not ShowDialog(score)) {
-            return '';
+        ShowDialog(score);
+    }"
+
+
+    Dialog.CreateBrackets "() {
+        groups = GetUsuls()[UsulChoice];
+        parsedGroups = ParseUsulGroupLengths(DlgUsulGroups);
+        if (null != parsedGroups._property:error) {
+            return Sibelius.MessageBox(parsedGroups.error);
         }
+        if (DlgUsulName != UsulChoice or groups != ParseUsulGroupLengths(DlgUsulGroups)) {
+            if (not Sibelius.YesNoMessageBox('Modified or newly created usûl groups have not been saved yet. Save now and create brackets?')) {
+                return '';
+            }
+            if (not SaveUsul()) {
+                return '';
+            }
+            groups = GetUsuls()[UsulChoice];
+        }
+        Sibelius.CloseDialog(Dialog, Self, true);
+        score = Sibelius.ActiveScore;
         if (SelectionIsEmpty(score.Selection)) {
             selection = score.NthStaff(1);
         } else {
             selection = score.Selection;
         }
-        groups = GetUsuls()[UsulChoice];
         error = CreateBrackets(selection, groups);
         if (null != error) {
             Sibelius.MessageBox(error & '\n\nProcessing was interrupted.');
@@ -644,9 +661,8 @@
                 DefaultButton "1"
                 ID "IDC_APPLY_GROUPS_BUTTON"
                 Value
-                Method
+                Method "Dialog.CreateBrackets"
                 SetFocus "0"
-                EndDialog "1"
             }
             Button
             {
