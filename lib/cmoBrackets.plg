@@ -40,7 +40,7 @@
             if (not Sibelius.YesNoMessageBox('Modified or newly created usûl groups have not been saved yet. Save now and create brackets?')) {
                 return '';
             }
-            if (not SaveUsul()) {
+            if (not Dialog.SaveUsul()) {
                 return '';
             }
             groups = GetUsuls()[UsulChoice];
@@ -54,7 +54,7 @@
         }
         error = CreateBrackets(selection, groups);
         if (null != error) {
-            Sibelius.MessageBox(error & '\n\nProcessing was interrupted.');
+            return Sibelius.MessageBox(error & '\n\nProcessing was interrupted.');
         }
     }"
 
@@ -178,19 +178,22 @@
     }"
 
 
-    ///"Adds (or overwrites) an usul int the global `Usuls` Dictionary and writes
+    ///"Adds (or overwrites) an usûl in the global `Usuls` Dictionary and writes
     the updated data to a persistent file."
     /param "name (string)"
-    /param "unparsedGroups (string)  Numbers separated by spaces"
+    /param "groups (SparseArray<int>)  Group lengths"
     /return "(string|null)  An error message, if `unparsedGroups` could not be
     parsed or the patterns could not be written to a file. `null` on success."
-    SetUsul "(name, groups) {
+    SaveUsul "(name, groups) {
         usuls = GetUsuls();
         usuls[name] = groups;
         return WriteUsulsToFile();
     }"
 
 
+    ///"Deletes usûl settings from the dialog and the persistent file"
+    /param "usulToDelete (string)  The usûl name"
+    /return "(boolean)  `true` on success"
     DeleteUsul "(usulToDelete) {
         oldUsuls = GetUsuls();
         newUsuls = CreateDictionary();
@@ -498,14 +501,20 @@
     }"
 
 
-    SaveUsul "() {
-        usuls = GetUsuls();
+    ///"Uses `SaveUsul()` to store the usûl settings that are currently edited
+    in the dialog."
+    /return "(boolean)  `true` on success"
+    Dialog.SaveUsul "() {
         groupLengths = ParseUsulGroupLengths(DlgUsulGroups);
         if (null != groupLengths._property:error) {
-            Sibelius.MessageBox(groupLengths.error);
+            Sibelius.MessageBox(groupLengths.error & '\n\nCould not save usûl');
             return false;
         }
-        SetUsul(DlgUsulName, groupLengths);
+        error = SaveUsul(DlgUsulName, groupLengths);
+        if (null != error) {
+            Sibelius.MessageBox(error);
+            return false;
+        }
         if ('' = UsulChoice) {
             UsulChoice = DlgUsulName;
         }
@@ -574,13 +583,11 @@
             }
             ComboBox
             {
-                Title
                 X "65"
                 Y "4"
                 Width "60"
                 Height "13"
                 ListVar "UsulChoices"
-                AllowMultipleSelections "0"
                 ID "IDC_USULCHOICES_COMBO"
                 Value "UsulChoice"
                 Method "Dialog.ChooseUsul"
@@ -588,25 +595,21 @@
             }
             Edit
             {
-                Title
                 X "65"
                 Y "20"
                 Width "60"
                 Height "14"
                 ID "IDC_DLGUSULNAME_EDIT"
                 Value "DlgUsulName"
-                Method
             }
             Edit
             {
-                Title
                 X "65"
                 Y "36"
                 Width "60"
                 Height "14"
                 ID "IDC_DLGUSULGROUPS_EDIT"
                 Value "DlgUsulGroups"
-                Method
             }
             Button
             {
@@ -615,7 +618,6 @@
                 Y "52"
                 Width "50"
                 Height "14"
-                DefaultButton "0"
                 Method "ShowHelp"
             }
             Button
@@ -625,7 +627,6 @@
                 Y "52"
                 Width "50"
                 Height "14"
-                DefaultButton "0"
                 EndDialog "0"
             }
             Button
@@ -645,7 +646,6 @@
                 Y "4"
                 Width "50"
                 Height "14"
-                DefaultButton "0"
                 Method "Dialog.DeleteUsul"
             }
             Button
@@ -655,7 +655,7 @@
                 Y "28"
                 Width "50"
                 Height "14"
-                Method "SaveUsul"
+                Method "Dialog.SaveUsul"
             }
         }
     }
