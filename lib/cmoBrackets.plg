@@ -554,11 +554,6 @@
                 Y "5"
                 Width "60"
                 Height "14"
-                RightAlign "0"
-                ID "IDC_USULS_STATIC"
-                Value
-                Method
-                SetFocus "0"
             }
             Text
             {
@@ -567,11 +562,6 @@
                 Y "21"
                 Width "60"
                 Height "14"
-                RightAlign "0"
-                ID "IDC_USUL_NAME_STATIC"
-                Value
-                Method
-                SetFocus "0"
             }
             Text
             {
@@ -580,11 +570,6 @@
                 Y "37"
                 Width "60"
                 Height "14"
-                RightAlign "0"
-                ID "IDC_STATIC"
-                Value
-                Method
-                SetFocus "0"
             }
             ComboBox
             {
@@ -610,7 +595,6 @@
                 ID "IDC_DLGUSULNAME_EDIT"
                 Value "DlgUsulName"
                 Method
-                SetFocus "0"
             }
             Edit
             {
@@ -622,7 +606,6 @@
                 ID "IDC_DLGUSULGROUPS_EDIT"
                 Value "DlgUsulGroups"
                 Method
-                SetFocus "0"
             }
             Button
             {
@@ -632,10 +615,7 @@
                 Width "50"
                 Height "14"
                 DefaultButton "0"
-                ID "IDC_HELP_BUTTON"
-                Value
                 Method "ShowHelp"
-                SetFocus "0"
             }
             Button
             {
@@ -645,10 +625,6 @@
                 Width "50"
                 Height "14"
                 DefaultButton "0"
-                ID "IDC_CANCEL_BUTTON"
-                Value
-                Method
-                SetFocus "0"
                 EndDialog "0"
             }
             Button
@@ -659,10 +635,7 @@
                 Width "50"
                 Height "14"
                 DefaultButton "1"
-                ID "IDC_APPLY_GROUPS_BUTTON"
-                Value
                 Method "Dialog.CreateBrackets"
-                SetFocus "0"
             }
             Button
             {
@@ -672,10 +645,7 @@
                 Width "50"
                 Height "14"
                 DefaultButton "0"
-                ID "IDC_BUTTON"
-                Value
                 Method "Dialog.DeleteUsul"
-                SetFocus "0"
             }
             Button
             {
@@ -684,11 +654,7 @@
                 Y "28"
                 Width "50"
                 Height "14"
-                DefaultButton "0"
-                ID "IDC_BUTTON2"
-                Value
                 Method "SaveUsul"
-                SetFocus "0"
             }
         }
     }
