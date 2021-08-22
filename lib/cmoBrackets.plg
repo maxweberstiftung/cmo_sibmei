@@ -52,7 +52,7 @@
         } else {
             selection = score.Selection;
         }
-        error = CreateBrackets(selection, groups);
+        error = CreateBrackets(CollectBars(selection), groups);
         if (null != error) {
             return Sibelius.MessageBox(error & '\n\nProcessing was interrupted.');
         }
@@ -394,11 +394,11 @@
     }"
 
 
-    /param "selection (Selection|Score)"
+    /param "bars (SparseArray<Bar>)"
     /param "groups (SparseArray<int>)  A list of group durations, measured in
     eighth notes."
     /return "(string)  An empty string on success, otherwise an error message."
-    CreateBrackets "(selection, groups) {
+    CreateBrackets "(bars, groups) {
         nextGroupStart = 0;
         groupStarts = CreateSparseArray();
         for each groupLength in groups {
@@ -406,8 +406,6 @@
             nextGroupStart = nextGroupStart + (groupLength * 128);
         }
         expectedBarLength = nextGroupStart;
-
-        bars = CollectBars(selection);
 
         Sibelius.CreateProgressDialog('Adding brackets', 0, bars.Length);
         Sibelius.ResetStopWatch(1);
@@ -460,7 +458,7 @@
                         // The end bracket can be anchored directly on the note
                         endPosition = endNoteRest.Position;
                     }
-                    case (anchorNoteRests.Length > i + 2) {
+                    case ((i + 2) < anchorNoteRests.Length) {
                         // The end bracket is anchored halfway between the group
                         // start note and the next group start note
                         endPosition = anchorNoteRests[i + 2].Position;

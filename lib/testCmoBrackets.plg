@@ -6,20 +6,15 @@
     }"
 
 
-    InitGlobals "() {
-        if (Self._property:Initialized) {
-            return null;
-        }
-        Self._property:Initialized = true;
-    }"
-
-
     Run "() {
         Self._property:TestDir = cmo_sibmei.GetPluginDir(PLGTITLE) & 'bracketTestFiles' & Sibelius.PathSeparator;
+
+        cmoBrackets.InitGlobals();
 
         suite = Test.Suite(PLGTITLE, Self, Self);
         suite
             .Add('TestUsulDetection')
+            .Add('TestCreateBrackets')
         ;
         suite.Run();
     }"
@@ -28,6 +23,42 @@
     TestUsulDetection "(assert, plugin) {
         score = OpenTestScore(assert, 'example-bars.sib');
         assert.Equal('Aksak semâî', cmoBrackets.GetUsulText(score).usul, 'Find usul by text style');
+    }"
+
+
+    AssertBracketCreation "(assert, score, options) {
+        bar = score.NthStaff(1).NthBar(options.bar);
+        error = cmoBrackets.CreateBrackets(CreateSparseArray(bar), options.groups);
+        if (not assert.OK(null = error, 'Must not return errror: ' & error)) {
+            return '';
+        }
+        brackets = cmoBrackets.CollectBrackets(bar);
+        positions = CreateSparseArray();
+        offsets = CreateSparseArray();
+        for i = 0 to brackets.Length {
+            bracket = brackets[i];
+            if (i % 2 = 0) {
+                assert.Equal(cmoBrackets.StartSymbol, bracket.Index, 'Start symbol expected for bracket ' & i & ' in bar ' & bar);
+            } else {
+                assert.Equal(cmoBrackets.EndSymbol, bracket.Index, 'End symbol expected for bracket ' & i & ' in bar ' & bar);
+            }
+            positions.Push(bracket.Position);
+            offsets.Push(bracket.Dx);
+        }
+        assert.Equal(options.expectedPositions, positions, 'Positions must match');
+        assert.Equal(options.expectedOffsets, offsets, 'Offsets must match');
+        return brackets;
+    }"
+
+
+    TestCreateBrackets "(assert, plugin) {
+        score = OpenTestScore(assert, 'example-bars.sib');
+        AssertBracketCreation(assert, score, CreateDictionary(
+            'bar', 2,
+            'groups', CreateSparseArray(4, 4, 4, 4),
+            'expectedPositions', CreateSparseArray(0, 256, 512, 768, 1024, 1408, 1536, 1792),
+            'expectedOffsets', CreateSparseArray(-4, -4, -4, -4, -4, -4, -4, -4)
+        ));
     }"
 
 
