@@ -19,8 +19,7 @@
         Self._property:EndSymbolDx = -4;
         Self._property:StartSymbol = 404;
         Self._property:EndSymbol = 405;
-        // AlignmentGridSize must be float, i.e. '.0' is important
-        Self._property:AlignmentGridSize = 128.0;
+        Self._property:AlignmentGridSize = 128;
     }"
 
 
@@ -268,7 +267,9 @@
             if (symbol.Index = StartSymbol or symbol.Index = EndSymbol) {
                 brackets.Push(symbol);
                 if (symbol.Index = StartSymbol) {
-                    startPosition = Round(symbol.Position / AlignmentGridSize) * AlignmentGridSize;
+                    startPosition = (
+                        Round(symbol.Position * 1.0 / AlignmentGridSize) * AlignmentGridSize
+                    );
                     brackets.startPositions.Push(startPosition);
                 }
             }
