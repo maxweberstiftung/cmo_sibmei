@@ -218,6 +218,10 @@
 
     ///"This function can be used to return an error state for functions that
     return objects."
+    /param "bar (Bar|null)  `bar` is used to provide information about the
+    bar/division.  I `null`, no bar information will be reported."
+    /param "groupIndex (int)  The 0-based index of the usûl group to report.  If
+    `groupIndex` is negative, no group information will be reported."
     /return "(Dictionary<string>)  A Dictionary with a single key `error` that
     is an error message. The `message` argument is concatenated with information
     about the position the error stems from in the music."
@@ -227,10 +231,12 @@
         } else {
             groupInfo = '';
         }
-        return CreateDictionary(
-            'error',
-            message & ', bar ' & bar.BarNumber & ' (Division ' & bar.ExternalBarNumberString & ')' & groupInfo
-        );
+        if (null = bar) {
+            barInfo = '';
+        } else {
+            barInfo = ', bar ' & bar.BarNumber & ' (Division ' & bar.ExternalBarNumberString & ')';
+        }
+        return CreateDictionary('error', message & barInfo & groupInfo);
     }"
 
 
