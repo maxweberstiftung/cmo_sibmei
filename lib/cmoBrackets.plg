@@ -30,7 +30,7 @@
     }"
 
 
-    Dialog.CreateBrackets "() {
+    Dialog_CreateBrackets "() {
         groups = GetUsuls()[UsulChoice];
         parsedGroups = ParseUsulGroupLengths(DlgUsulGroups);
         if (null != parsedGroups._property:error) {
@@ -40,7 +40,7 @@
             if (not Sibelius.YesNoMessageBox('Modified or newly created usûl groups have not been saved yet. Save now and create brackets?')) {
                 return '';
             }
-            if (not Dialog.SaveUsul()) {
+            if (not Dialog_SaveUsul()) {
                 return '';
             }
             groups = GetUsuls()[UsulChoice];
@@ -502,7 +502,7 @@
     ///"Uses `SaveUsul()` to store the usûl settings that are currently edited
     in the dialog."
     /return "(boolean)  `true` on success"
-    Dialog.SaveUsul "() {
+    Dialog_SaveUsul "() {
         groupLengths = ParseUsulGroupLengths(DlgUsulGroups);
         if (null != groupLengths._property:error) {
             Sibelius.MessageBox(groupLengths.error & '\n\nCould not save usûl');
@@ -523,13 +523,13 @@
     }"
 
 
-    Dialog.ChooseUsul "() {
+    Dialog_ChooseUsul "() {
         RefreshUsulChoices(UsulChoice, false);
         Sibelius.RefreshDialog();
     }"
 
 
-    Dialog.DeleteUsul "() {
+    Dialog_DeleteUsul "() {
         if (Sibelius.YesNoMessageBox('Delete usul ' & UsulChoice & '?')) {
             DeleteUsul(UsulChoice);
             RefreshUsulChoices('', false);
@@ -588,7 +588,7 @@
                 ListVar "UsulChoices"
                 ID "IDC_USULCHOICES_COMBO"
                 Value "UsulChoice"
-                Method "Dialog.ChooseUsul"
+                Method "Dialog_ChooseUsul"
                 SetFocus "1"
             }
             Edit
@@ -635,7 +635,7 @@
                 Width "50"
                 Height "14"
                 DefaultButton "1"
-                Method "Dialog.CreateBrackets"
+                Method "Dialog_CreateBrackets"
             }
             Button
             {
@@ -644,7 +644,7 @@
                 Y "4"
                 Width "50"
                 Height "14"
-                Method "Dialog.DeleteUsul"
+                Method "Dialog_DeleteUsul"
             }
             Button
             {
@@ -653,7 +653,7 @@
                 Y "28"
                 Width "50"
                 Height "14"
-                Method "Dialog.SaveUsul"
+                Method "Dialog_SaveUsul"
             }
         }
     }
