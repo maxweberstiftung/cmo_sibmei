@@ -462,21 +462,29 @@
     }"
 
 
-    Dialog.SaveUsul "() {
-        usuls = GetUsuls();
+    ParseUsulGroupLengths "(groupInput) {
         groupLengths = CreateSparseArray();
-        for each value in SplitString(DlgUsulGroups, ' ', true) {
+        for each value in SplitString(groupInput, ' ', true) {
             // Cast TreeNode to string
             stringValue = value & '';
             numberValue = Round(value);
             if (stringValue != numberValue) {
-                Sibelius.MessageBox('Usul group lengths must be numbers separated by space characters. Please correct the input.');
-                return false;
+                return Error('Usul group lengths must be numbers separated by space characters. Please correct the input.', null, -1);
             }
             groupLengths.Push(numberValue);
         }
         if (groupLengths.Length = 0) {
-            Sibelius.MessageBox('The usul groups field must have at least one number. Please correct the input.');
+            return Error('The usul groups field must have at least one number. Please correct the input.', null, -1);
+        }
+        return groupLengths;
+    }"
+
+
+    SaveUsul "() {
+        usuls = GetUsuls();
+        groupLengths = ParseUsulGroupLengths(DlgUsulGroups);
+        if (null != groupLengths._property:error) {
+            Sibelius.MessageBox(groupLengths.error);
             return false;
         }
         SetUsul(DlgUsulName, groupLengths);
@@ -663,7 +671,7 @@
                 DefaultButton "0"
                 ID "IDC_BUTTON2"
                 Value
-                Method "Dialog.SaveUsul"
+                Method "SaveUsul"
                 SetFocus "0"
             }
         }
