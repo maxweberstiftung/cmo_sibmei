@@ -47,20 +47,44 @@
     `usul`.  If `usul` is not found int the list of usuls, then the first usul
     of the dropdown menu is chosen."
     /param "usul (string)"
-    RefreshUsulChoices "(usul) {
+    /param "createNewUsul (boolean)  If `usul` is not already present in the list
+    of known usûls, add it to the list of choices (but don't save it yet to the
+    list that is saved to the final file)."
+    /return "(boolean)  `true` if a new usûl was added to the list of choices."
+    RefreshUsulChoices "(usul, createNewUsul) {
         usuls = GetUsuls();
         UsulChoices = CreateArray();
         for each Name usulName in usuls {
             UsulChoices[UsulChoices.NumChildren] = usulName;
         }
-        if (null != usuls[usul]) {
-            UsulChoice = usul;
-        } else {
-            UsulChoice = UsulChoices[0];
+
+        UsulChoice = usul;
+        createdNewUsul = false;
+
+        if (null = usuls[usul]) {
+            if (createNewUsul) {
+                UsulChoices[UsulChoices.NumChildren] = usul;
+                DlgUsulGroups = '';
+                createdNewUsul = true;
+            } else {
+                UsulChoice = UsulChoices[0];
+            }
         }
 
         DlgUsulName = UsulChoice;
-        DlgUsulGroups = usuls[UsulChoice].Join(' ');
+        if (not createdNewUsul) {
+            DlgUsulGroups = usuls[UsulChoice].Join(' ');
+        }
+
+        return createdNewUsul;
+    }"
+
+
+    FocusControl "(dialog, controlId) {
+        for each control in dialog.Controls {
+            // SetControl has the values 0 or 1, so convert to number with '+ 0'
+            control.SetFocus = (control.ID = controlId) + 0;
+        }
     }"
 
 
@@ -74,7 +98,13 @@
         } else {
             usulName = usulText.usul;
         }
-        RefreshUsulChoices(usulName);
+        createdNewUsul = RefreshUsulChoices(usulName, true);
+        if (createdNewUsul) {
+            Sibelius.MessageBox('No grouping was defined yet for ' & usulName & '. Please input it in the dialog.');
+            FocusControl(Dialog, 'IDC_DLGUSULGROUPS_EDIT');
+        } else {
+            FocusControl(Dialog, 'IDC_USULCHOICES_COMBO');
+        }
 
         return Sibelius.ShowDialog(Dialog, Self);
     }"
@@ -447,7 +477,7 @@
         if ('' = UsulChoice) {
             UsulChoice = DlgUsulName;
         }
-        RefreshUsulChoices(DlgUsulName);
+        RefreshUsulChoices(DlgUsulName, false);
         Sibelius.RefreshDialog();
 
         return true;
@@ -455,7 +485,7 @@
 
 
     Dialog.ChooseUsul "() {
-        RefreshUsulChoices(UsulChoice);
+        RefreshUsulChoices(UsulChoice, false);
         Sibelius.RefreshDialog();
     }"
 
@@ -463,7 +493,7 @@
     Dialog.DeleteUsul "() {
         if (Sibelius.YesNoMessageBox('Delete usul ' & UsulChoice & '?')) {
             DeleteUsul(UsulChoice);
-            RefreshUsulChoices('');
+            RefreshUsulChoices('', false);
             Sibelius.RefreshDialog();
         }
     }"
