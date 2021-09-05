@@ -131,6 +131,8 @@
     }"
 
 
+    ///"Reads the usûl data from the persistent usûl file, or returns the cached
+    data, if the file was already read."
     /return "(Dictionary)  Keys are usul names, values are `SparseArray`s with
     the lengths of each group in quarter notes."
     GetUsuls "() {
@@ -139,6 +141,7 @@
         }
         Self._property:Usuls = CreateDictionary();
         usulLines = Sibelius.ReadTextFile(GetUsulFile());
+        malformedLines = CreateSparseArray();
         for each line in usulLines {
             // First column is the usul name, the following columns are the
             // group lengths
@@ -146,15 +149,22 @@
             usulName = fields[0];
             groupLengths = CreateSparseArray();
             if (fields.NumChildren < 2) {
-                Trace('Malformed line in ' & GetUsulFile() & ':\n' & line);
-                // Not returning a Dictionary will crash the plugin, but that's
-                // O.K. for now.
-                return '';
+                malformedLines.Push(line);
+            } else {
+                for i = 1 to fields.NumChildren {
+                    groupLengths.Push(fields[i] + 0);
+                }
+                Usuls[usulName] = groupLengths;
             }
-            for i = 1 to fields.NumChildren {
-                groupLengths.Push(fields[i] + 0);
+        }
+        if (malformedLines.Length > 0) {
+            if (Sibelius.YesNoMessageBox(
+                'The following malformed entries were found in the usûl pattern data file '
+                & GetUsulFile() & ':\n\n    ' & line
+                & '\n\nRewrite the file and delete the entries?'
+            )) {
+                WriteUsulsToFile();
             }
-            Usuls[usulName] = groupLengths;
         }
         return Usuls;
     }"
