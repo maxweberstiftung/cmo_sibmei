@@ -54,11 +54,22 @@
     TestCreateBrackets "(assert, plugin) {
         score = OpenTestScore(assert, 'example-bars.sib');
         AssertBracketCreation(assert, score, CreateDictionary(
+            'bar', 1,
+            'groups', CreateSparseArray(2, 3, 2, 3),
+            'expectedPositions', CreateSparseArray(0, 128, 256, 512, 640, 768, 896, 1152),
+            'expectedOffsets', CreateSparseArray(-4, -4, -4, -4, -4, -4, -4, -4)
+        ));
+        AssertBracketCreation(assert, score, CreateDictionary(
             'bar', 2,
             'groups', CreateSparseArray(4, 4, 4, 4),
             'expectedPositions', CreateSparseArray(0, 256, 512, 768, 1024, 1408, 1536, 1792),
             'expectedOffsets', CreateSparseArray(-4, -4, -4, -4, -4, -4, -4, -4)
         ));
+        error = cmoBrackets.CreateBrackets(
+            CreateSparseArray(score.NthStaff(1).NthBar(3)),
+            CreateSparseArray(4, 4, 4, 4)
+        );
+        assert.OK(null != error, 'Existing brackets that differ from the groups argument must trigger an error');
     }"
 
 
