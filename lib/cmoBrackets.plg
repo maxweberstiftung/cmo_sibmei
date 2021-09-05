@@ -446,7 +446,6 @@
                 return 'Bar ' & bar.BarNumber & ' has pre-existing brackets that deviate from the current usûl pattern';
             }
 
-            // TODO: Don't touch brackets if they're already O.K.
             for each bracket in existingBrackets {
                 bracket.Delete();
             }
@@ -476,7 +475,7 @@
                         endPosition = anchorNoteRests[i + 2].Position;
                     }
                     default {
-                        // The end bracket is anchored halfway between the groups
+                        // The end bracket is anchored halfway between the group
                         // start note and the end of the bar
                         endPosition = bar.Length;
                     }
