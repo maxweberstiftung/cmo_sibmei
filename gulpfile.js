@@ -56,6 +56,7 @@ function deploy (cb)
 
 function develop() {
     gulp.watch(['src/**/*', 'test/**/*', 'lib/**/*.plg'], gulp.series(build, deploy))
-  }
+}
 
-  exports.develop = develop;
+exports.develop = develop;
+exports.build = build;
