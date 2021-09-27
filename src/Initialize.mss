@@ -7,6 +7,20 @@ function Initialize() {
 
 function InitSibmeiExtension (api) {
     //$module(cmo_sibmei)
+
+    if (not Self._property:Standalone) {
+        if (not Sibelius.YesNoMessageBox(CreateSparseArray(
+            'It appears you chose \'',
+            PluginName,
+            '\' in the Sibmei export dialog. For properly exporting CMO data with preprocessing and postprocessing steps, call \'',
+            PluginName,
+            '\' directly from the plugin or command menu. Continue anyway?'
+        ).Join(''))) {
+            ExitPlugin();
+        }
+    }
+    Self._property:Standalone = false;
+
     Self._property:api = api;
     Self._property:libmei = api.libmei;
 

@@ -1,4 +1,5 @@
 Version                     "0.0.1"
-PluginName                  "CMO to MEI"
-Author                      "Anna Plaksin"
+PluginName                  "CMO MEI 4 export"
+Author                      "Anna Plaksin, Thomas Weber"
 SibmeiExtensionAPIVersion   "1.0.0"
+PLGNAME "cmo_sibmei"
