@@ -35,7 +35,6 @@ function Export(score) {
 
 function Postprocess(meiFiles) {
     pluginDir = GetPluginDir(PluginName);
-    Trace('dir: ' & pluginDir);
     if (Sibelius.PathSeparator = '/')
     {
         // We're on Mac – this is untested!
@@ -51,15 +50,8 @@ function Postprocess(meiFiles) {
         pluginDir & 'CmoMeiPostprocessor.jar',
         '--xslt-dir',
         pluginDir & 'xslts'
-    );
+    ).Concat(meiFiles);
 
-    for each file in meiFiles
-    {
-        parameters.Push(file);
-    }
-
-
-    Trace(script);
     if (not Sibelius.LaunchApplication(script, parameters))
     {
         Sibelius.MessageBox('Could not trigger postprocessing');
