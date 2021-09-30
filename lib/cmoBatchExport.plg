@@ -1,0 +1,11 @@
+{
+    Initialize "()
+    {
+        AddToPluginsMenu('CMO Export folder to MEI 4', 'Run');
+    }"
+
+    Run "()
+    {
+        cmo_sibmei.BatchExport();
+    }"
+}

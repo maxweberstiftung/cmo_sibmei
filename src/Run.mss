@@ -8,6 +8,33 @@ function Run() {
 }  //$end
 
 
+function BatchExport() {
+    if (not InitGlobals())
+    {
+        return null;
+    }
+    folder = Sibelius.SelectFolder();
+    if (null = folder)
+    {
+        return null;
+    }
+
+    meiFiles = CreateSparseArray();
+
+    for each SIB file in folder
+    {
+        if (not Sibelius.Open(file.NameWithExt, True))
+        {
+            return null;
+        }
+        meiFiles.Push(Export(Sibelius.ActiveScore));
+        Sibelius.CloseWindow(false);
+    }
+
+    Postprocess(meiFiles);
+}  //$end
+
+
 function InitGlobals() {
     Self._property:Standalone = true;
 
