@@ -77,6 +77,9 @@ function Postprocess(meiFiles) {
         pluginDir & 'CmoMeiPostprocessor.jar',
         '--xslt-dir',
         pluginDir & 'xslts'
+        // TODO: Uncomment these two linces once there is a useful RNG schema
+        // '--schema',
+        // pluginDir & 'mei-cmo.rng'
     ).Concat(meiFiles);
 
     if (not Sibelius.LaunchApplication(script, parameters))
