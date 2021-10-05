@@ -250,7 +250,7 @@
     ///"This function can be used to return an error state for functions that
     return objects."
     /param "bar (Bar|null)  `bar` is used to provide information about the
-    bar/division.  I `null`, no bar information will be reported."
+    bar/division.  If `null`, no bar information will be reported."
     /param "groupIndex (int)  The 0-based index of the usûl group to report.  If
     `groupIndex` is negative, no group information will be reported."
     /return "(Dictionary<string>)  A Dictionary with a single key `error` that

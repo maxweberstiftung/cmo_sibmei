@@ -37,8 +37,8 @@ function InitSibmeiExtension (api) {
         'Index', CreateDictionary(
             '404', 'PipeIndexControlEvent',
             '405', 'PipeIndexControlEvent'
-            )
-        ), Self);
+        )
+    ), Self);
 
     Self._property:CustomTextMap = CreateDictionary(
         'Section', CreateSparseArray('Dir', CreateDictionary('type', 'Section')),
